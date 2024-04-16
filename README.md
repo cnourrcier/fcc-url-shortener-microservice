@@ -29,7 +29,7 @@ npm install
 1. Start the server:
 
 ```bash
-npm run dev
+npm run start
 ```
 
 ## API Endpoints

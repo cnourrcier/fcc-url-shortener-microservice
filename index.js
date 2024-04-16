@@ -27,20 +27,21 @@ app.get('/', function (req, res) {
 // Your first API endpoint
 app.post('/api/shorturl', function (req, res) {
   const { url } = req.body;
-  console.log(new URL(url).hostname);
-
   dns.lookup(new URL(url).hostname, async (err, address) => {
     if (!address) {
       return res.json({ error: 'Invalid URL' });
     } else {
-      const urlCount = await urls.countDocuments({}); // create a count of total documents in collection
+      const count = await urls.countDocuments({}); // create a count of total documents in collection
       const urlDoc = {
-        url,
-        short_url: urlCount // create shorturl based on document count in db
+        original_url: url,
+        short_url: count // create shorturl based on document count in db
       }
-      const insertedDoc = await urls.insertOne(urlDoc); // insert new url and short url into db
-      console.log(insertedDoc);
-      return res.json({ original_url: url, short_url: urlCount });
+      await urls.insertOne(urlDoc); // insert original url and short url into db
+      const insertedDoc = await urls.findOne(urlDoc, { projection: { _id: 0 } }) // make sure url is stored in db
+      if (!insertedDoc) {
+        res.send('Error: The document was not saved to the database')
+      }
+      return res.json({ ...insertedDoc });
     }
   })
 });
@@ -48,7 +49,7 @@ app.post('/api/shorturl', function (req, res) {
 app.get('/api/shorturl/:shorturl', async (req, res) => {
   const { shorturl } = req.params;
   const urlDoc = await urls.findOne({ short_url: +shorturl });
-  res.redirect(urlDoc.url);
+  res.redirect(urlDoc.original_url);
 })
 
 
